@@ -16,8 +16,40 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    path('admin/', admin.site.urls),
+
+    # Auth
+    path('api/auth/', include('apps.accounts.urls')),
+
+    # Users / Vendors
+    path('api/users/', include('apps.accounts.urls_users')),
+    path('api/vendors/', include('apps.vendors.urls')),
+
+    # Products & Search
+    path('api/products/', include('apps.products.urls')),
+    path('api/search/', include('apps.search.urls')),
+
+    # Orders & Checkpoints
+    path('api/orders/', include('apps.orders.urls')),
+    path('api/', include('apps.checkpoints.urls')),
+
+    # Payments
+    path('api/payments/', include('apps.payments.urls')),
+
+    # Reviews
+    path('api/reviews/', include('apps.reviews.urls')),
+
+    # Notifications
+    path('api/notifications/', include('apps.notifications.urls')),
+
+    # Admin API
+    path('api/admin/', include('apps.admin_panel.urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
