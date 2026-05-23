@@ -204,7 +204,7 @@ ANYMAIL = {
     'SENDGRID_API_KEY': env('SENDGRID_API_KEY', default=''),
 }
 EMAIL_BACKEND = 'anymail.backends.sendgrid.EmailBackend'
-DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@zuvy.com')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='rockykingsley9087@gmail.com')
 
 # ─── Paystack ─────────────────────────────────────────────────────────────────
 PAYSTACK_SECRET_KEY = env('PAYSTACK_SECRET_KEY', default='')
