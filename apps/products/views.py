@@ -16,13 +16,15 @@ class ProductListView(generics.ListAPIView):
     filterset_class     = ProductFilter
     ordering_fields     = ['price','created_at']
     ordering            = ['-created_at']
-    queryset            = Product.objects.filter(is_active=True).select_related('vendor','category')
+    is_moderated         = True  # Only show products that have been approved by admin
+    is_active            = True  # Only show products that are active
+    queryset            = Product.objects.filter(is_active=True, is_moderated=True).select_related('vendor','category')
 
 class ProductDetailView(generics.RetrieveAPIView):
     """GET /api/products/:id/ — single product full detail"""
     permission_classes = [AllowAny]
     serializer_class   = ProductDetailSerializer
-    queryset           = Product.objects.filter(is_active=True)
+    queryset           = Product.objects.filter(is_active=True, is_moderated=True)
 
 class ProductCreateView(generics.CreateAPIView):
     """POST /api/products/ — approved vendor creates a product"""

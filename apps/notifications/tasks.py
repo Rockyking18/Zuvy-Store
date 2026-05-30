@@ -4,7 +4,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 
-# ── Helper: push a notification via WebSocket ─────────────────────────────────
+# Helper: push a notification via WebSocket
 def _push_ws_notification(user_id, notification):
     layer = get_channel_layer()
     async_to_sync(layer.group_send)(
@@ -20,7 +20,7 @@ def _push_ws_notification(user_id, notification):
     )
 
 
-# ── Email verification on registration ───────────────────────────────────────
+# Email verification on registration
 @shared_task
 def send_verification_email(user_id):
     from apps.accounts.models import User
@@ -33,7 +33,7 @@ def send_verification_email(user_id):
     )
 
 
-# ── Notify vendor when a new order comes in ───────────────────────────────────
+# Notify vendor when a new order comes in 
 @shared_task
 def notify_vendor_order(order_id):
     from apps.orders.models import Order
@@ -57,7 +57,7 @@ def notify_vendor_order(order_id):
         )
 
 
-# ── Notify buyer when their order moves through a stage ──────────────────────
+# Notify buyer when their order moves through a stage
 @shared_task
 def notify_buyer_checkpoint(order_id, stage):
     from apps.orders.models import Order
@@ -77,8 +77,48 @@ def notify_buyer_checkpoint(order_id, stage):
     )
     _push_ws_notification(order.buyer.id, notif)
 
+    # Auto-flag vendors with multiple disputes
+@shared_task
+def check_vendor_dispute_rate():
+    from apps.vendors.models import Vendor
+    from apps.checkpoints.models import Checkpoint
+    from django.utils import timezone
+    from datetime import timedelta
 
-# ── Trigger vendor payout when order is COMPLETED ────────────────────────────
+    period = timezone.now() - timedelta(days=30)
+    vendors = Vendor.objects.filter(status='approved')
+
+    for vendor in vendors:
+        disputes = Checkpoint.objects.filter(
+            stage='DISPUTED',
+            order__items__vendor=vendor,
+            timestamp__gte=period
+        ).count()
+
+        if disputes >= 3:
+            vendor.status = 'suspended'
+            vendor.save()
+            notify_admin_vendor_suspended.delay(vendor.id, f'Auto-suspended: {disputes} disputes in 30 days')
+
+
+@shared_task
+def notify_admin_vendor_suspended(vendor_id, message):
+    from apps.vendors.models import Vendor
+    from apps.accounts.models import User
+    from apps.notifications.models import Notification
+
+    vendor = Vendor.objects.select_related('user').get(id=vendor_id)
+    admins = User.objects.filter(role='admin')
+
+    for admin in admins:
+        Notification.objects.create(
+            user=admin,
+            message=message,
+            type='system'
+        )
+
+
+# Trigger vendor payout when order is COMPLETED 
 @shared_task
 def trigger_payout(order_id):
     import requests
@@ -119,3 +159,57 @@ def trigger_payout(order_id):
             status='processing',
             reference=payout_ref,
         )
+
+@shared_task
+def notify_admin_kyc_submitted(kyc_id):
+    from apps.vendors.models import VendorKYC
+    from apps.accounts.models import User
+    from apps.notifications.models import Notification
+
+    kyc    = VendorKYC.objects.select_related('vendor__user').get(id=kyc_id)
+    admins = User.objects.filter(role='admin')
+
+    for admin in admins:
+        Notification.objects.create(
+            user=admin,
+            message=f'New KYC submission from {kyc.vendor.business_name}. Please review.',
+            type='system'
+        )
+
+
+@shared_task
+def notify_vendor_kyc_approved(vendor_id):
+    from apps.vendors.models import Vendor
+    from apps.notifications.models import Notification
+
+    vendor = Vendor.objects.select_related('user').get(id=vendor_id)
+    Notification.objects.create(
+        user=vendor.user,
+        message='Your KYC has been approved. You can now list products on Zuvy!',
+        type='system'
+    )
+    send_mail(
+        subject='Zuvy KYC Approved',
+        message=f'Hi {vendor.business_name}, your identity verification has been approved. Welcome to Zuvy!',
+        from_email='noreply@zuvy.com',
+        recipient_list=[vendor.user.email],
+    )
+
+
+@shared_task
+def notify_vendor_kyc_rejected(vendor_id, reason):
+    from apps.vendors.models import Vendor
+    from apps.notifications.models import Notification
+
+    vendor = Vendor.objects.select_related('user').get(id=vendor_id)
+    Notification.objects.create(
+        user=vendor.user,
+        message=f'Your KYC was not approved. Reason: {reason}',
+        type='system'
+    )
+    send_mail(
+        subject='Zuvy KYC — Action Required',
+        message=f'Hi {vendor.business_name}, your KYC was not approved.\n\nReason: {reason}\n\nPlease resubmit with the correct documents.',
+        from_email='noreply@zuvy.com',
+        recipient_list=[vendor.user.email],
+    )

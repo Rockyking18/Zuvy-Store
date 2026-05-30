@@ -20,7 +20,7 @@ class ProductSearchView(APIView):
         params.is_valid(raise_exception=True)
         data = params.validated_data
 
-        qs = Product.objects.filter(is_active=True).select_related('vendor','category')
+        qs = Product.objects.filter(is_moderated=True, is_active=True).select_related('vendor','category')
 
         # 2. Full-text search (PostgreSQL)
         if data['q']:

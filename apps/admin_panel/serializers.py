@@ -39,3 +39,21 @@ class PlatformSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model  = PlatformSettings
         fields = ['default_commission_rate','featured_listing_price']
+
+from apps.vendors.models import VendorKYC
+
+class AdminKYCSerializer(serializers.ModelSerializer):
+    vendor_name  = serializers.CharField(source='vendor.business_name', read_only=True)
+    owner_email  = serializers.EmailField(source='vendor.user.email', read_only=True)
+
+    class Meta:
+        model  = VendorKYC
+        fields = [
+            'id', 'vendor_name', 'owner_email',
+            'full_legal_name', 'ghana_card_number',
+            'ghana_card_front', 'ghana_card_back',
+            'selfie_with_card', 'phone_number',
+            'business_address', 'business_reg_number',
+            'business_reg_cert', 'status',
+            'rejection_reason', 'submitted_at',
+        ]

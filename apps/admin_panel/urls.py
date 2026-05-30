@@ -3,6 +3,7 @@ from .views import (
     AdminVendorListView, AdminVendorStatusView,
     AdminUserListView, AdminOrderListView,
     AdminOrderRefundView, AdminCheckpointOverrideView,
+    AdminPendingProductListView,
     AdminStatsView, AdminSettingsView,
 )
 
@@ -17,6 +18,8 @@ urlpatterns = [
     path('orders/<int:pk>/refund/',     AdminOrderRefundView.as_view(),       name='admin-refund'),
     path('orders/<int:order_id>/checkpoints/<int:cp_id>/',
                                         AdminCheckpointOverrideView.as_view(),name='admin-cp-override'),
+    # Products
+    path('products/pending/',           AdminPendingProductListView.as_view(),name='admin-pending-products'),
     # Platform
     path('stats/',                      AdminStatsView.as_view(),             name='admin-stats'),
     path('settings/',                   AdminSettingsView.as_view(),          name='admin-settings'),

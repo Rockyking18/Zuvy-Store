@@ -33,6 +33,7 @@ class Checkpoint(models.Model):
     ]
 
     order     = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='checkpoints')
+    photo_proof = models.ImageField(upload_to='checkpoints/proofs/', blank=True)
     stage     = models.CharField(max_length=30, choices=STAGE_CHOICES)
     timestamp = models.DateTimeField(auto_now_add=True)
     notes     = models.TextField(blank=True)

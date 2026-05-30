@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Vendor
+from .models import Vendor, VendorKYC
 
 # ── Registration: vendor submits their business details ───────────────
 class VendorRegistrationSerializer(serializers.ModelSerializer):
@@ -37,3 +37,25 @@ class VendorAdminSerializer(serializers.ModelSerializer):
         model  = Vendor
         fields = ['id','owner_email','business_name','status',
                   'is_platform_vendor','commission_rate','rating','created_at']
+
+# ── KYC submission: vendor uploads their documents ────────────────────────────
+class VendorKYCSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = VendorKYC
+        fields = [
+            'full_legal_name', 'ghana_card_number',
+            'ghana_card_front', 'ghana_card_back',
+            'selfie_with_card', 'phone_number',
+            'business_address', 'business_reg_number',
+            'business_reg_cert', 'product_category',
+        ]
+
+# ── KYC status: vendor checks where their application stands ──────────────────
+class VendorKYCStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = VendorKYC
+        fields = [
+            'status', 'rejection_reason',
+            'submitted_at', 'reviewed_at',
+        ]
+        read_only_fields = fields

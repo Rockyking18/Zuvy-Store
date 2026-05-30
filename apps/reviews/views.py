@@ -1,6 +1,8 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models import Avg
+from .models import Review
 
 
 class ReviewCreateView(APIView):
@@ -25,3 +27,8 @@ class VendorReviewListView(APIView):
 			{'detail': 'Vendor review list is not implemented yet.'},
 			status=status.HTTP_501_NOT_IMPLEMENTED,
 		)
+
+def update_vendor_rating(vendor):
+    avg = Review.objects.filter(vendor=vendor).aggregate(Avg('rating'))['rating__avg']
+    vendor.rating = round(avg, 2)
+    vendor.save(update_fields=['rating'])

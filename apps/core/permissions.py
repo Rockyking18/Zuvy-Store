@@ -17,11 +17,14 @@ class IsBuyerOrVendor(BasePermission):
         return request.user.is_authenticated and request.user.role in ['buyer','vendor']
 
 class IsApprovedVendor(BasePermission):
-    """Vendor must be approved before they can list products or view orders."""
     def has_permission(self, request, view):
         if not request.user.is_authenticated or request.user.role != 'vendor':
             return False
-        return hasattr(request.user, 'vendor') and request.user.vendor.status == 'approved'
+        vendor = getattr(request.user, 'vendor', None)
+        if not vendor:
+            return False
+        # Must be approved AND KYC must be approved
+        return vendor.status == 'approved' and vendor.is_kyc_approved()
 
 class IsOrderParticipant(BasePermission):
     """Object-level: only the buyer or the vendor on an order can access it."""
